@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결과 조회</title>
+  <style>
+    :root {
+      --primary-color: #007bff;
+      --success-color: #28a745;
+      --fail-color: #dc3545;
+      --neutral-color: #6c757d;
+      --bg-color: #f8f9fa;
+      --text-color: #333;
+      --border-color: #dee2e6;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: var(--bg-color);
+    }
+    .container {
+      background-color: white;
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 400px;
+      text-align: center;
+    }
+    h1 {
+      color: var(--text-color);
+      margin-bottom: 2rem;
+      font-size: 1.8rem;
+    }
+    .form-group {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+      color: #555;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--primary-color);
+    }
+    button {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 8px;
+      background-color: var(--primary-color);
+      color: white;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    button:disabled {
+      background-color: #b0c4de;
+      cursor: not-allowed;
+    }
+    button:hover:enabled {
+      background-color: #0056b3;
+    }
+    #result {
+      margin-top: 2rem;
+      font-size: 1.1rem;
+      font-weight: bold;
+      padding: 1rem;
+      border-radius: 8px;
+      display: none; /* Initially hidden */
+    }
+    .result-pass { background-color: #e9f5ec; color: var(--success-color); }
+    .result-fail { background-color: #fbebee; color: var(--fail-color); }
+    .result-not-found, .result-error { background-color: #f1f3f5; color: var(--neutral-color); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>합격/불합격 결과 조회</h1>
+    <form id="check-form">
+      <div class="form-group">
+        <label for="name">이름</label>
+        <input type="text" id="name" name="name" placeholder="홍길동" required>
+      </div>
+      <div class="form-group">
+        <label for="phone">연락처 뒤 4자리</label>
+        <input type="tel" id="phone" name="phone" pattern="\d{4}" maxlength="4" placeholder="1234" required>
+      </div>
+      <button type="submit" id="submit-btn">결과 확인</button>
+    </form>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('check-form');
+    const submitBtn = document.getElementById('submit-btn');
+    const resultDiv = document.getElementById('result');
+
+    form.addEventListener('submit', event => {
+      event.preventDefault();
+      
+      const nameInput = document.getElementById('name').value;
+      const phoneInput = document.getElementById('phone').value;
+      
+      // 입력값 유효성 검사
+      if (!nameInput || !phoneInput || phoneInput.length !== 4) {
+        showResult({status: 'error', message: '이름과 연락처 4자리를 정확히 입력해주세요.'});
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '조회 중...';
+      resultDiv.style.display = 'none';
+
+      const formData = {
+        name: nameInput,
+        phone: phoneInput
+      };
+      
+      google.script.run
+        .withSuccessHandler(showResult)
+        .withFailureHandler(showError)
+        .checkStudentStatus(formData);
+    });
+
+    function showResult(response) {
+      resultDiv.textContent = response.message;
+      resultDiv.className = 'result-' + response.status;
+      resultDiv.style.display = 'block';
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = '결과 확인';
+    }
+
+    function showError(error) {
+      showResult({
+        status: 'error',
+        message: '오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+      });
+      console.error('Apps Script Error:', error);
+    }
+  </script>
+</body>
+</html>
